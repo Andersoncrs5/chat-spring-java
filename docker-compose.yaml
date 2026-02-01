@@ -1,0 +1,35 @@
+services:
+  redis:
+    image: 'redis'
+    container_name: chat_redis_
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass 123456
+    restart: unless-stopped
+    networks:
+      - chat
+
+  scylladb:
+    image: scylladb/scylla:latest
+    container_name: scylla-node1
+    ports:
+      - "9042:9042" # CQL port
+      - "9160:9160" # Thrift port (deprecated)
+      - "9180:9180" # JMX port (optional)
+      - "10000:10000" # Intra-node communication
+      - "7001:7001" # Inter-node communication (not strictly needed for single-node, but good practice)
+    command: --smp 1 --memory 3G --overprovisioned 1 --api-address 0.0.0.0
+    volumes:
+      - scylla_data_volume:/var/lib/scylla
+    restart: unless-stopped
+    networks:
+      - chat
+
+networks:
+  chat:
+    driver: bridge
+
+volumes:
+  scylla_data_volume: {}
+  cassandra_data:
+    driver: local
