@@ -5,6 +5,8 @@ import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.Table;
 import org.springframework.data.cassandra.core.mapping.Indexed;
 import java.time.OffsetDateTime;
+import java.util.Set;
+
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -42,4 +44,7 @@ public class UserModel extends BaseModel {
 
     @Column("login_block_at")
     private OffsetDateTime loginBlockAt;
+
+    @Column("roles")
+    private Set<String> roles;
 }
