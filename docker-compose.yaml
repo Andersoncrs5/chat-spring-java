@@ -1,17 +1,20 @@
 services:
-  redis:
-    image: 'redis'
-    container_name: chat_redis_
+  dragonfly:
+    container_name: dragonfly_chat
+    image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    ulimits:
+      memlock: -1
+    command: ["--proactor_threads=5", "--maxmemory=3gb"]
     ports:
       - "6379:6379"
-    command: redis-server --requirepass 123456
-    restart: unless-stopped
+    volumes:
+      - dragonfly_data:/data
     networks:
-      - chat
+      - chat_spring
 
   scylladb:
     image: scylladb/scylla:latest
-    container_name: scylla-node1
+    container_name: scylladb_chat
     ports:
       - "9042:9042" # CQL port
       - "9160:9160" # Thrift port (deprecated)
@@ -23,13 +26,14 @@ services:
       - scylla_data_volume:/var/lib/scylla
     restart: unless-stopped
     networks:
-      - chat
+      - chat_spring
 
 networks:
-  chat:
+  chat_spring:
     driver: bridge
 
 volumes:
   scylla_data_volume: {}
+  dragonfly_data: {}
   cassandra_data:
     driver: local
