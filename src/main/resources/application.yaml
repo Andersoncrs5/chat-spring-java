@@ -1,4 +1,35 @@
 spring:
+  security:
+    revoke:
+      enabled: true
+
+    jti:
+      enabled: true
+
+    header:
+      name: Authorization
+      prefix: Bearer
+
+    refresh:
+      reuse: false
+      rotate: true
+      max-usage: 1
+
+    exp:
+      token: 7
+      refresh: 30
+
+    jwt:
+      algorithm: HS256
+      issuer: chat-api
+      audience: chat-client
+      clock-skew-seconds: 30
+      secret: 747673h4r9fgfgdgyf6t34tgydgy6t43gygyd5fd45c5ds63787324tg387g4fg983g8
+
+  threads:
+    virtual:
+      enabled: true
+
   application:
     name: api
 
