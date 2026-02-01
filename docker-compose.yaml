@@ -72,7 +72,6 @@ services:
     networks:
       - chat_spring
 
-  # --- SCYLLADB (NoSQL) ---
   scylladb:
     image: scylladb/scylla:latest
     container_name: scylladb_chat_
