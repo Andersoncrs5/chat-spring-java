@@ -1,6 +1,66 @@
+name: chat-stack
+
+networks:
+  chat_spring:
+    driver: bridge
+
+volumes:
+  redpanda-0:
+  scylla_data_volume:
+  dragonfly_data:
+
 services:
+  redpanda-0:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    container_name: redpanda-0
+    command:
+      - redpanda start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda-0:33145
+      - --advertise-rpc-addr redpanda-0:33145
+      - --mode dev-container
+      - --smp 1
+      - --memory 1G
+    ports:
+      - 18081:18081
+      - 18082:18082
+      - 19092:19092
+      - 9644:9644
+    volumes:
+      - redpanda-0:/var/lib/redpanda/data
+    networks:
+      - chat_spring
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: redpanda-console
+    networks:
+      - chat_spring
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda-0:9092"]
+          schemaRegistry:
+            enabled: true
+            urls: ["http://redpanda-0:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda-0:9644"]
+    ports:
+      - 9999:8080
+    depends_on:
+      - redpanda-0
+
   dragonfly:
-    container_name: dragonfly_chat
+    container_name: dragonfly_chat_
     image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
     ulimits:
       memlock: -1
@@ -12,28 +72,15 @@ services:
     networks:
       - chat_spring
 
+  # --- SCYLLADB (NoSQL) ---
   scylladb:
     image: scylladb/scylla:latest
-    container_name: scylladb_chat
+    container_name: scylladb_chat_
     ports:
-      - "9042:9042" # CQL port
-      - "9160:9160" # Thrift port (deprecated)
-      - "9180:9180" # JMX port (optional)
-      - "10000:10000" # Intra-node communication
-      - "7001:7001" # Inter-node communication (not strictly needed for single-node, but good practice)
+      - "9042:9042"
     command: --smp 1 --memory 3G --overprovisioned 1 --api-address 0.0.0.0
     volumes:
       - scylla_data_volume:/var/lib/scylla
     restart: unless-stopped
     networks:
       - chat_spring
-
-networks:
-  chat_spring:
-    driver: bridge
-
-volumes:
-  scylla_data_volume: {}
-  dragonfly_data: {}
-  cassandra_data:
-    driver: local
