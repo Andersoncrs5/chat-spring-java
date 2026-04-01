@@ -33,22 +33,10 @@ spring:
   application:
     name: api
 
-  cassandra:
-    contact-points: 127.0.0.1
-    port: 9042
-    local-datacenter: datacenter1
-    keyspace-name: chat
-    schema-action: create_if_not_exists
-    request:
-      timeout: 10s
-    connection:
-      connect-timeout: 10s
-      init-query-timeout: 10s
-    session:
-      keyspace-creation-queries:
-        - "CREATE KEYSPACE IF NOT EXISTS chat WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};"
-
   data:
+    mongodb:
+      auto-index-creation: true
+      uri: mongodb://localhost:27017/telegram_clone
     redis:
       host: localhost
       port: 6379
