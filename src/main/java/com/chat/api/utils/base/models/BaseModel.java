@@ -10,7 +10,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -27,9 +27,9 @@ public abstract class BaseModel {
 
     @CreatedDate
     @Field("created_at")
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
     @Field("updated_at")
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 }
