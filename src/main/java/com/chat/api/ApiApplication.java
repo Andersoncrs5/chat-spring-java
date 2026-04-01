@@ -1,5 +1,6 @@
 package com.chat.api;
 
+import com.chat.api.configs.parameters.ArgonProperties;
 import com.chat.api.configs.parameters.FrontParameter;
 import com.chat.api.configs.parameters.JwtParameter;
 import com.chat.api.configs.parameters.RoleParameter;
@@ -10,7 +11,7 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing;
 
 @SpringBootApplication
 @EnableMongoAuditing
-@EnableConfigurationProperties({JwtParameter.class, FrontParameter.class, RoleParameter.class})
+@EnableConfigurationProperties({JwtParameter.class, FrontParameter.class, RoleParameter.class, ArgonProperties.class})
 public class ApiApplication {
 
 	public static void main(String[] args) {
