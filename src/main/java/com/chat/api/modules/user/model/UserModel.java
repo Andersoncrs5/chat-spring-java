@@ -14,11 +14,11 @@ import java.util.Set;
 
 @Document(collection = "users")
 @Getter
-@Setter(AccessLevel.PROTECTED)
+@Setter
 @ToString(callSuper = true)
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder(toBuilder = true)
 public class UserModel extends BaseModel {
 
     @Field("name")
