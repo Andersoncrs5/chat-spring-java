@@ -1,4 +1,17 @@
 spring:
+  jackson:
+    default-property-inclusion: non_null # Não envia campos nulos no JSON
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    serialization:
+      write-dates-as-timestamps: false # Envia como String ISO-8601, não como números
+      indent-output: false # Em produção, mantém o JSON compacto
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   security:
     revoke:
       enabled: true
@@ -43,3 +56,11 @@ spring:
 
 server:
   port: 8888
+
+config:
+  front:
+    url: http://localhost:5173
+    methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+    allowed-headers: Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers
+    max-age: 3600
+    allow-credentials: true
