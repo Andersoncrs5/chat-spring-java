@@ -6,7 +6,7 @@ networks:
 
 volumes:
   redpanda-0:
-  scylla_data_volume:
+  mongodb_data:
   dragonfly_data:
 
 services:
@@ -72,14 +72,26 @@ services:
     networks:
       - chat_spring
 
-  scylladb:
-    image: scylladb/scylla:latest
-    container_name: scylladb_chat_
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
     ports:
-      - "9042:9042"
-    command: --smp 1 --memory 3G --overprovisioned 1 --api-address 0.0.0.0
+      - "27017:27017"
     volumes:
-      - scylla_data_volume:/var/lib/scylla
+      - mongodb_data:/data/db
     restart: unless-stopped
+    networks:
+      - chat_spring
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_SERVER: mongodb
+    depends_on:
+      - mongodb
     networks:
       - chat_spring
