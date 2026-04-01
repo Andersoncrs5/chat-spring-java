@@ -1,17 +1,17 @@
 package com.chat.api.utils.base.models;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.mapping.Field;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
-
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.cassandra.core.mapping.Column;
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
@@ -19,17 +19,17 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public abstract class BaseModel {
 
-    @PrimaryKey
+    @Id
     private UUID id;
 
     @Version
     private Long version;
 
     @CreatedDate
-    @Column("created_at")
+    @Field("created_at")
     private OffsetDateTime createdAt;
 
     @LastModifiedDate
-    @Column("updated_at")
+    @Field("updated_at")
     private OffsetDateTime updatedAt;
 }
