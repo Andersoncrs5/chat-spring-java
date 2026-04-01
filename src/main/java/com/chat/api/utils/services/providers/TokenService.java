@@ -1,13 +1,14 @@
-package com.chat.api.services.providers;
+package com.chat.api.utils.services.providers;
 
 import com.chat.api.configs.parameters.JwtParameter;
-import com.chat.api.models.UserModel;
-import com.chat.api.services.interfaces.ITokenService;
+import com.chat.api.modules.user.model.UserModel;
+import com.chat.api.utils.services.interfaces.ITokenService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.KeyLengthException;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -86,6 +88,35 @@ public class TokenService implements ITokenService {
         return LocalDateTime.now()
                 .plusDays(this.jwtParameter.exp().refresh())
                 .toInstant(ZoneOffset.of("-03:00"));
+    }
+
+    @Override
+    public String validateToken(String token) {
+        String secret = jwtParameter.jwt().secret();
+
+        log.debug("Validating token...");
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            MACVerifier verifier = new MACVerifier(secret.getBytes());
+
+            if (!signedJWT.verify(verifier)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            }
+
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            if (claimsSet.getExpirationTime().before(new Date())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            }
+
+            return claimsSet.getSubject();
+        } catch (JOSEException | ParseException e) {
+            log.debug("Error the to parse or to check the token: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
     }
 
 }
