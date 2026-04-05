@@ -79,4 +79,15 @@ public class Result<T> {
         return isSuccess ? value : defaultValue;
     }
 
+    public T orElseGet(java.util.function.Supplier<? extends T> other) {
+        return isSuccess ? value : other.get();
+    }
+
+    public Result<T> orElseRes(java.util.function.Supplier<Result<T>> supplier) {
+        if (isSuccess) {
+            return this;
+        }
+        return supplier.get();
+    }
+
 }
