@@ -1,6 +1,7 @@
 package com.chat.api.unit.user;
 
 import com.chat.api.modules.user.dto.CreateUserDTO;
+import com.chat.api.modules.user.dto.UpdateUserDTO;
 import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.modules.user.repository.UserRepository;
 import com.chat.api.modules.user.services.provider.UserService;
@@ -14,6 +15,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import java.util.Optional;
@@ -46,6 +48,14 @@ public class UserServiceTest {
             user.getName(),
             user.getUsername(),
             user.getEmail(),
+            user.getPassword(),
+            user.getBannerUrl(),
+            user.getPhoneNumber()
+    );
+
+    UpdateUserDTO updateDTO = new UpdateUserDTO(
+            user.getName(),
+            user.getUsername(),
             user.getPassword(),
             user.getBannerUrl(),
             user.getPhoneNumber()
@@ -178,6 +188,55 @@ public class UserServiceTest {
         assertThat(result.getValue()).isNull();
 
         verify(repository, times(1)).findById(id);
+    }
+
+    @Test
+    void shouldUpdate() {
+        doNothing().when(mapper).updateModelFromDto(updateDTO, user);
+        when(encoder.encode(anyString())).thenReturn(user.getPassword());
+        when(repository.save(any())).thenReturn(user);
+
+        Result<UserModel> result = this.service.update(user, updateDTO);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(200);
+        assertThat(result.getValue().getId()).isEqualTo(user.getId());
+
+        verify(mapper, times(1)).updateModelFromDto(updateDTO, user);
+        verify(encoder, times(1)).encode(user.getPassword());
+        verify(repository, times(1)).save(user);
+        verifyNoMoreInteractions(mapper, encoder, repository);
+
+        InOrder order = inOrder(mapper, encoder, repository);
+        order.verify(mapper).updateModelFromDto(updateDTO, user);
+        order.verify(encoder).encode(anyString());
+        order.verify(repository).save(any());
+    }
+
+    @Test
+    void shouldThrowDuplicateKeyExceptionBecauseUsernameAlreadyExists() {
+        DuplicateKeyException ex = mock(DuplicateKeyException.class);
+        when(ex.getMessage()).thenReturn("duplicate key error: username");
+
+        doNothing().when(mapper).updateModelFromDto(updateDTO, user);
+        when(encoder.encode(anyString())).thenReturn(user.getPassword());
+        when(repository.save(any())).thenThrow(ex);
+
+        Result<UserModel> result = this.service.update(user, updateDTO);
+
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(result.getValue()).isNull();
+
+        verify(mapper, times(1)).updateModelFromDto(updateDTO, user);
+        verify(encoder, times(1)).encode(user.getPassword());
+        verify(repository, times(1)).save(user);
+        verifyNoMoreInteractions(mapper, encoder, repository);
+
+        InOrder order = inOrder(mapper, encoder, repository);
+        order.verify(mapper).updateModelFromDto(updateDTO, user);
+        order.verify(encoder).encode(anyString());
+        order.verify(repository).save(any());
     }
 
 }
