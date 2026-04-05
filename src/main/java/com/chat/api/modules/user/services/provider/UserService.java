@@ -1,11 +1,24 @@
 package com.chat.api.modules.user.services.provider;
 
+import com.chat.api.modules.user.dto.CreateUserDTO;
+import com.chat.api.modules.user.dto.UserFilterDTO;
+import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.modules.user.repository.UserRepository;
 import com.chat.api.modules.user.services.interfaces.IUserService;
+import com.chat.api.utils.annotation.global.isModelInitialized.IsModelInitialized;
+import com.chat.api.utils.mapper.user.UserMapper;
+import com.chat.api.utils.result.Result;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -13,8 +26,52 @@ import org.springframework.stereotype.Service;
 public class UserService implements IUserService {
 
     private final UserRepository repository;
+    private final UserMapper mapper;
     private final Argon2PasswordEncoder encoder;
 
+    @Override
+    public Result<UserModel> create(CreateUserDTO dto) {
+        UserModel model = this.mapper.toModel(dto);
+        model.setPassword(encoder.encode(dto.password()));
 
+        try {
+            UserModel save = this.repository.save(model);
+
+            return Result.created(save);
+        } catch (DuplicateKeyException e) {
+
+            var message = e.getMessage();
+            if (message != null && message.contains("email")) {
+                return Result.conflict("This email address is already in use.");
+            }
+
+            if (message != null && message.contains("username")) {
+                return Result.conflict("This username is already in use.");
+            }
+            return Result.conflict("Duplicate data detected.");
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public void delete(@IsModelInitialized UserModel user) {
+        this.repository.delete(user);
+    }
+
+    @Override
+    public Result<UserModel> findById(UUID id) {
+        Optional<UserModel> optional = this.repository.findById(id);
+
+        return optional
+                .map(Result::success)
+                .orElseGet(() -> Result.notFound("User not found"));
+    }
+
+    public Page<UserModel> findAll(UserFilterDTO filter, Pageable pageable) {
+        return this.repository.findByFilter(filter, pageable);
+    }
 
 }
