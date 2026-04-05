@@ -177,12 +177,18 @@
 			<version>1.6.3</version>
 		</dependency>
 
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok-mapstruct-binding</artifactId>
 			<version>0.2.0</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.redis</groupId>
+			<artifactId>testcontainers-redis</artifactId>
+			<version>2.2.2</version>
+			<scope>test</scope>
 		</dependency>
 
 
