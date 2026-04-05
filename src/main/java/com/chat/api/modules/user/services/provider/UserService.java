@@ -1,6 +1,7 @@
 package com.chat.api.modules.user.services.provider;
 
 import com.chat.api.modules.user.dto.CreateUserDTO;
+import com.chat.api.modules.user.dto.UpdateUserDTO;
 import com.chat.api.modules.user.dto.UserFilterDTO;
 import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.modules.user.repository.UserRepository;
@@ -70,8 +71,36 @@ public class UserService implements IUserService {
                 .orElseGet(() -> Result.notFound("User not found"));
     }
 
+    @Override
     public Page<UserModel> findAll(UserFilterDTO filter, Pageable pageable) {
         return this.repository.findByFilter(filter, pageable);
+    }
+
+    @Override
+    public Result<UserModel> update(
+            @IsModelInitialized UserModel user,
+            UpdateUserDTO dto
+    ) {
+        this.mapper.updateModelFromDto(dto, user);
+
+        if (!dto.password().isBlank())
+            user.setPassword(encoder.encode(dto.password()));
+
+        try {
+            UserModel save = this.repository.save(user);
+
+            return Result.success(save);
+        } catch (DuplicateKeyException e) {
+            String message = e.getMessage();
+
+            if (message != null && message.contains("username")) {
+                return Result.conflict("This username is already in use.");
+            }
+            return Result.conflict("Duplicate data detected.");
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
