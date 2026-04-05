@@ -1,5 +1,6 @@
 package com.chat.api;
 
+import com.redis.testcontainers.RedisContainer;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,12 @@ class TestcontainersConfiguration {
 	@ServiceConnection
 	MongoDBContainer mongoDBContainer() {
 		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
+	}
+
+	@Bean
+	@ServiceConnection
+	RedisContainer redisContainer() {
+		return new RedisContainer(DockerImageName.parse("redis:latest"));
 	}
 
 }
