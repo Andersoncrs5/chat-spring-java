@@ -42,6 +42,7 @@ public class UserServiceTest {
             .email("user@gmail.com")
             .password("12345678")
             .roles(Set.of("USER"))
+            .bio("AnyBio")
             .build();
 
     CreateUserDTO dto = new CreateUserDTO(
@@ -50,6 +51,7 @@ public class UserServiceTest {
             user.getEmail(),
             user.getPassword(),
             user.getBannerUrl(),
+            user.getBio(),
             user.getPhoneNumber()
     );
 
@@ -58,6 +60,7 @@ public class UserServiceTest {
             user.getUsername(),
             user.getPassword(),
             user.getBannerUrl(),
+            user.getBio(),
             user.getPhoneNumber()
     );
 

@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,6 +39,9 @@ public class UserModel extends BaseModel {
     @Field("password")
     private String password;
 
+    @Field("bio")
+    private String bio;
+
     @Field("refresh_token")
     private String refreshToken;
 
@@ -49,6 +53,9 @@ public class UserModel extends BaseModel {
 
     @Field("attempts_login")
     private int attemptsLogin = 0;
+
+    @Field("last_active_at")
+    private Instant lastActiveAt;
 
     @Builder.Default
     @Field("roles")
@@ -81,6 +88,10 @@ public class UserModel extends BaseModel {
     public void resetLoginAttempts() {
         this.attemptsLogin = 0;
         this.loginBlockAt = null;
+    }
+
+    public void updateLastActive() {
+        this.lastActiveAt = Instant.now();
     }
 
 }

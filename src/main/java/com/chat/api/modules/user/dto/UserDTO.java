@@ -10,8 +10,10 @@ public record UserDTO(
         String username,
         String email,
         String bannerUrl,
+        String bio,
         String phoneNumber,
         Long version,
+        Instant lastActiveAt,
         Set<String> roles,
         Instant createdAt,
         Instant updatedAt

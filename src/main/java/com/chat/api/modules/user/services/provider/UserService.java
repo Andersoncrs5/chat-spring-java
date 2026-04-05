@@ -96,8 +96,8 @@ public class UserService implements IUserService {
             if (message != null && message.contains("username")) {
                 return Result.conflict("This username is already in use.");
             }
-            return Result.conflict("Duplicate data detected.");
 
+            return Result.conflict("Duplicate data detected.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
