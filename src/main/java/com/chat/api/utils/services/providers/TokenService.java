@@ -2,6 +2,9 @@ package com.chat.api.utils.services.providers;
 
 import com.chat.api.configs.parameters.JwtParameter;
 import com.chat.api.modules.user.model.UserModel;
+import com.chat.api.utils.annotation.global.isModelInitialized.IsModelInitialized;
+import com.chat.api.utils.mapper.user.UserMapper;
+import com.chat.api.utils.res.ResponseToken;
 import com.chat.api.utils.services.interfaces.ITokenService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -30,6 +33,21 @@ import java.util.UUID;
 public class TokenService implements ITokenService {
 
     private final JwtParameter jwtParameter;
+    private final UserMapper userMapper;
+
+    public ResponseToken generateResponseToken(@IsModelInitialized UserModel user) {
+        String token = this.generateToken(user);
+        String refreshToken = this.generateRefreshToken(user);
+
+        return new ResponseToken(
+                token,
+                refreshToken,
+                null,
+                this.genExpirationDate(),
+                this.genExpirationDateRefreshToken(),
+                userMapper.toDto(user)
+        );
+    }
 
     public String generateRefreshToken(UserModel user) {
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
