@@ -3,6 +3,7 @@ package com.chat.api.modules.user.services.provider;
 import com.chat.api.modules.user.dto.CreateUserDTO;
 import com.chat.api.modules.user.dto.UpdateUserDTO;
 import com.chat.api.modules.user.dto.UserFilterDTO;
+import com.chat.api.modules.user.gateway.UserModuleGateway;
 import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.modules.user.repository.UserRepository;
 import com.chat.api.modules.user.services.interfaces.IUserService;
@@ -29,6 +30,7 @@ public class UserService implements IUserService {
     private final UserRepository repository;
     private final UserMapper mapper;
     private final Argon2PasswordEncoder encoder;
+    private final UserModuleGateway gateway;
 
     @Override
     public Result<UserModel> create(CreateUserDTO dto) {
