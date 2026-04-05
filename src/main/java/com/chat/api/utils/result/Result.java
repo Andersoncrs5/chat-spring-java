@@ -1,5 +1,6 @@
 package com.chat.api.utils.result;
 
+import com.chat.api.modules.user.model.UserModel;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
@@ -37,6 +38,14 @@ public class Result<T> {
 
     public static <T> Result<T> failure(List<String> errors, HttpStatus status) {
         return new Result<>(null, false, errors, status);
+    }
+
+    public static <T> Result<T> conflict(String s) {
+        return new Result<>(null, false, List.of(s), HttpStatus.CONFLICT);
+    }
+
+    public static <T> Result<T> notFound(String s) {
+        return new Result<>(null, false, List.of(s), HttpStatus.NOT_FOUND);
     }
 
     public boolean isFailure() {
