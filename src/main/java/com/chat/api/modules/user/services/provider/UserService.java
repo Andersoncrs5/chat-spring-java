@@ -7,6 +7,7 @@ import com.chat.api.modules.user.gateway.UserModuleGateway;
 import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.modules.user.repository.UserRepository;
 import com.chat.api.modules.user.services.interfaces.IUserService;
+import com.chat.api.utils.annotation.global.emailConstraint.EmailConstraint;
 import com.chat.api.utils.annotation.global.isModelInitialized.IsModelInitialized;
 import com.chat.api.utils.mapper.user.UserMapper;
 import com.chat.api.utils.result.Result;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -89,6 +91,73 @@ public class UserService implements IUserService {
             user.setPassword(encoder.encode(dto.password()));
 
         try {
+            UserModel save = this.repository.save(user);
+
+            return Result.success(save);
+        } catch (DuplicateKeyException e) {
+            String message = e.getMessage();
+
+            if (message != null && message.contains("username")) {
+                return Result.conflict("This username is already in use.");
+            }
+
+            return Result.conflict("Duplicate data detected.");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Result<UserModel> findByEmail(@EmailConstraint String email) {
+        Optional<UserModel> optional = this.repository.findByEmailIgnoreCase(email);
+
+        return optional
+                .map(Result::success)
+                .orElseGet(() -> Result.notFound("User not found"));
+    }
+
+    @Override
+    public Result<UserModel> blockUser(
+            UUID userID
+    ) {
+        Optional<UserModel> optional = this.repository.findById(userID);
+
+        if (optional.isEmpty()) return Result.notFound("User not found");
+
+        UserModel user = optional.get();
+
+        try {
+            user.recordFailedLogin();
+            UserModel save = this.repository.save(user);
+
+            return Result.success(save);
+        } catch (DuplicateKeyException e) {
+            String message = e.getMessage();
+
+            if (message != null && message.contains("username")) {
+                return Result.conflict("This username is already in use.");
+            }
+
+            return Result.conflict("Duplicate data detected.");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Result<UserModel> setLastLogin(
+            UUID userID
+    ) {
+        Optional<UserModel> optional = this.repository.findById(userID);
+
+        if (optional.isEmpty()) return Result.notFound("User not found");
+
+        UserModel user = optional.get();
+
+        try {
+            user.resetLoginAttempts();
+            user.setLastActiveAt(Instant.now());
+
             UserModel save = this.repository.save(user);
 
             return Result.success(save);
