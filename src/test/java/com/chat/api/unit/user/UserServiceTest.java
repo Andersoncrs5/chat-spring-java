@@ -242,4 +242,184 @@ public class UserServiceTest {
         order.verify(repository).save(any());
     }
 
+    @Test
+    void shouldReturnUserWhenFindByEmail() {
+        when(repository.findByEmailIgnoreCase(user.getEmail()))
+                .thenReturn(Optional.of(user));
+
+        Result<UserModel> result = this.service.findByEmail(user.getEmail());
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getValue()).isEqualTo(user);
+
+        verify(repository, times(1)).findByEmailIgnoreCase(user.getEmail());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldReturnNullWhenFindByEmail() {
+        when(repository.findByEmailIgnoreCase(user.getEmail()))
+                .thenReturn(Optional.empty());
+
+        Result<UserModel> result = this.service.findByEmail(user.getEmail());
+
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getValue()).isNull();
+
+        verify(repository, times(1)).findByEmailIgnoreCase(user.getEmail());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldFailBecauseUserNotFound() {
+        when(repository.findById(user.getId())).thenReturn(Optional.empty());
+
+        Result<UserModel> userResult = this.service.findById(user.getId());
+
+        assertThat(userResult.isFailure()).isTrue();
+        assertThat(userResult.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(userResult.getValue()).isNull();
+
+        verify(repository, times(1)).findById(any());
+        verify(repository, never()).save(any());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should block user successfully by incrementing failed attempts")
+    void shouldBlockUserSuccessfully() {
+        UUID userId = user.getId();
+        int initialAttempts = user.getAttemptsLogin();
+
+        when(repository.findById(userId)).thenReturn(Optional.of(user));
+        when(repository.save(any(UserModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Result<UserModel> result = this.service.blockUser(userId);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(200);
+        assertThat(result.getValue().getAttemptsLogin()).isEqualTo(initialAttempts + 1);
+
+        verify(repository, times(1)).findById(userId);
+        verify(repository, times(1)).save(user);
+
+        verifyNoMoreInteractions(repository);
+
+        InOrder order = inOrder(repository);
+        order.verify(repository).findById(any());
+        order.verify(repository).save(any());
+    }
+
+    @Test
+    @DisplayName("Should return not found when blocking non-existent user")
+    void shouldReturnNotFoundWhenBlockingUser() {
+        UUID userId = UUID.randomUUID();
+        when(repository.findById(userId)).thenReturn(Optional.empty());
+
+        Result<UserModel> result = this.service.blockUser(userId);
+
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(404);
+        assertThat(result.getErrors()).contains("User not found");
+
+        verify(repository, never()).save(any());
+        verify(repository, times(1)).findById(userId);
+
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should return conflict when DuplicateKeyException occurs on username during block")
+    void shouldReturnConflictOnBlockWhenUsernameExists() {
+        UUID userId = user.getId();
+        DuplicateKeyException ex = mock(DuplicateKeyException.class);
+        when(ex.getMessage()).thenReturn("duplicate key error: username");
+
+        when(repository.findById(userId)).thenReturn(Optional.of(user));
+        when(repository.save(any())).thenThrow(ex);
+
+        Result<UserModel> result = this.service.blockUser(userId);
+
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(409);
+        assertThat(result.getErrors()).contains("This username is already in use.");
+
+        verify(repository).save(user);
+    }
+
+    @Test
+    @DisplayName("Should set last login and reset attempts successfully")
+    void shouldSetLastLoginSuccessfully() {
+        // Arrange
+        UUID userId = user.getId();
+        user.setAttemptsLogin(3); // Simula que tinha tentativas antes
+
+        when(repository.findById(userId)).thenReturn(Optional.of(user));
+        when(repository.save(any(UserModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Result<UserModel> result = this.service.setLastLogin(userId);
+
+        // Assert
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(200);
+        assertThat(result.getValue().getAttemptsLogin()).isEqualTo(0);
+        assertThat(result.getValue().getLastActiveAt()).isNotNull();
+
+        verify(repository, times(1)).findById(userId);
+        verify(repository, times(1)).save(user);
+        verifyNoMoreInteractions(repository);
+
+        InOrder order = inOrder(repository);
+        order.verify(repository).findById(userId);
+        order.verify(repository).save(user);
+    }
+
+    @Test
+    @DisplayName("Should return not found when setting last login for non-existent user")
+    void shouldReturnNotFoundWhenSettingLastLogin() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        when(repository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act
+        Result<UserModel> result = this.service.setLastLogin(userId);
+
+        // Assert
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(404);
+        assertThat(result.getErrors()).contains("User not found");
+
+        verify(repository, times(1)).findById(userId);
+        verify(repository, never()).save(any());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should return conflict when DuplicateKeyException occurs during setLastLogin")
+    void shouldReturnConflictOnSetLastLoginWhenUsernameExists() {
+        // Arrange
+        UUID userId = user.getId();
+        DuplicateKeyException ex = mock(DuplicateKeyException.class);
+        when(ex.getMessage()).thenReturn("duplicate key error: username");
+
+        when(repository.findById(userId)).thenReturn(Optional.of(user));
+        when(repository.save(any())).thenThrow(ex);
+
+        // Act
+        Result<UserModel> result = this.service.setLastLogin(userId);
+
+        // Assert
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getStatusCode()).isEqualTo(409);
+        assertThat(result.getErrors()).contains("This username is already in use.");
+
+        verify(repository, times(1)).findById(userId);
+        verify(repository, times(1)).save(user);
+
+        InOrder order = inOrder(repository);
+        order.verify(repository).findById(userId);
+        order.verify(repository).save(user);
+    }
+
 }
