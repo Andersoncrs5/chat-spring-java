@@ -1,5 +1,6 @@
 package com.chat.api.modules.auth.gateway;
 
+import com.chat.api.modules.user.dto.CreateUserDTO;
 import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.modules.user.services.interfaces.IUserService;
 import com.chat.api.utils.result.Result;
@@ -24,6 +25,10 @@ public class AuthModuleGateway {
 
     public Result<UserModel> setLastLogin(UUID id) {
         return this.userService.setLastLogin(id);
+    }
+
+    public Result<UserModel> createUser(CreateUserDTO dto) {
+        return this.userService.create(dto);
     }
 
 }
