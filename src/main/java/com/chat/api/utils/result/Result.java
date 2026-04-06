@@ -40,11 +40,11 @@ public class Result<T> {
         return new Result<>(null, false, errors, status);
     }
 
-    public static <T> Result<T> conflict(String s) {
+    public static <T> Result<T> conflict(String ...s) {
         return new Result<>(null, false, List.of(s), HttpStatus.CONFLICT);
     }
 
-    public static <T> Result<T> notFound(String s) {
+    public static <T> Result<T> notFound(String ...s) {
         return new Result<>(null, false, List.of(s), HttpStatus.NOT_FOUND);
     }
 
