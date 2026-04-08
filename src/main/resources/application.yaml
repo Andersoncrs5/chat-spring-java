@@ -50,7 +50,7 @@ spring:
     mongodb:
       uuid-representation: standard
       auto-index-creation: true
-      uri: mongodb://localhost:27017/telegram_clone?retryWrites=false
+      uri: mongodb://localhost:27017/telegram_clone?maxIdleTimeMS=60000&socketTimeoutMS=10000&connectTimeoutMS=10000&waitQueueTimeoutMS=5000
     redis:
       host: localhost
       port: 6379
