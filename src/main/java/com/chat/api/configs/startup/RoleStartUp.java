@@ -28,7 +28,7 @@ public class RoleStartUp implements CommandLineRunner {
     }
 
     private void createRole(String name) {
-        Result<RoleModel> result = this.roleService.create(name);
+        Result<RoleModel> result = this.roleService.create1(name);
 
         if (result.isSuccess()) {
             log.info("[STARTUP] Role '{}' created with success.", name);
