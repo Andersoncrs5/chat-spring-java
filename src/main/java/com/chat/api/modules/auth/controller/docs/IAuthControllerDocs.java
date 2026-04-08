@@ -4,7 +4,10 @@ import com.chat.api.modules.auth.dto.LoginRequestDTO;
 import com.chat.api.modules.user.dto.CreateUserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -17,6 +20,11 @@ public interface IAuthControllerDocs {
     @PostMapping("/login")
     ResponseEntity<?> login(
             @Valid @RequestBody LoginRequestDTO dto,
+            HttpServletRequest request
+    );
+    @GetMapping("refresh-token/{refreshToken}")
+    ResponseEntity<?> refreshToken(
+            @PathVariable String refreshToken,
             HttpServletRequest request
     );
 }
