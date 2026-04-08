@@ -22,21 +22,19 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void handle(@NonNull HttpServletRequest request,
-                       HttpServletResponse response,
-                       @NonNull AccessDeniedException accessDeniedException
+    public void handle(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull AccessDeniedException accessDeniedException
     ) throws IOException {
 
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
 
-        var body = new ResponseHttp<Void>(
-                null,
-                "Access Denied: You do not have permission to access this resource.",
-                UUID.randomUUID().toString(),
-                1,
-                true,
-                OffsetDateTime.now()
+        var body = ResponseHttp.error(
+                "Access Denied",
+                "You do not have the required permissions to access this resource."
         );
 
         objectMapper.writeValue(response.getOutputStream(), body);

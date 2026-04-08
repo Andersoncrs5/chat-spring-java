@@ -22,18 +22,19 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(@NonNull HttpServletRequest request, HttpServletResponse response, @NonNull AuthenticationException authException) throws IOException {
+    public void commence(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull AuthenticationException authException
+    ) throws IOException {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
 
-        var body = new ResponseHttp<Void>(
-                null,
-                "Login invalid",
-                UUID.randomUUID().toString(),
-                1,
-                true,
-                OffsetDateTime.now()
+        var body = ResponseHttp.error(
+                "Authentication failed",
+                "Full authentication is required to access this resource: " + authException.getMessage()
         );
 
         objectMapper.writeValue(response.getOutputStream(), body);
