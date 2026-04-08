@@ -88,7 +88,7 @@ public class UserService implements IUserService {
     ) {
         this.mapper.updateModelFromDto(dto, user);
 
-        if (!dto.password().isBlank())
+        if (dto.password() != null)
             user.setPassword(encoder.encode(dto.password()));
 
         try {
