@@ -63,4 +63,34 @@ public class RoleServiceTest {
         verify(repository, times(1)).save(any());
     }
 
+    @Test
+    void shouldCreate1Role() {
+        when(repository.save(any()))
+                .thenReturn(role);
+
+        Result<RoleModel> roleUser = this.service.create("USER");
+
+        assertThat(roleUser.isSuccess()).isTrue();
+        assertThat(roleUser.getValue().getId()).isEqualTo(role.getId());
+
+        verify(repository, times(1)).save(any());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldReturnFailureWhenRoleNameAlreadyExists1() {
+        org.springframework.dao.DuplicateKeyException mockException = mock(org.springframework.dao.DuplicateKeyException.class);
+
+        when(repository.save(any())).thenThrow(mockException);
+
+        Result<RoleModel> result = this.service.create("USER");
+
+        assertThat(result.isFailure()).isTrue();
+
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(result.getErrors().getFirst()).contains("already exists");
+
+        verify(repository, times(1)).save(any());
+    }
+
 }
