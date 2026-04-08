@@ -12,6 +12,7 @@ import com.chat.api.utils.annotation.global.isModelInitialized.IsModelInitialize
 import com.chat.api.utils.mapper.user.UserMapper;
 import com.chat.api.utils.result.Result;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -146,7 +147,8 @@ public class UserService implements IUserService {
 
     @Override
     public Result<UserModel> setLastLogin(
-            UUID userID
+            UUID userID,
+            String refreshToken
     ) {
         Optional<UserModel> optional = this.repository.findById(userID);
 
@@ -157,6 +159,7 @@ public class UserService implements IUserService {
         try {
             user.resetLoginAttempts();
             user.setLastActiveAt(Instant.now());
+            user.setRefreshToken(refreshToken);
 
             UserModel save = this.repository.save(user);
 
@@ -172,6 +175,43 @@ public class UserService implements IUserService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Result<UserModel> setLastLogin(
+            UUID userID
+    ) {
+        Optional<UserModel> optional = this.repository.findById(userID);
+
+        if (optional.isEmpty()) return Result.notFound("User not found");
+
+        UserModel user = optional.get();
+
+        try {
+            user.resetLoginAttempts();
+            user.setLastActiveAt(Instant.now());
+
+            UserModel save = this.repository.save(user);
+            log.info("user saved : {}", save);
+            return Result.success(save);
+        } catch (DuplicateKeyException e) {
+            String message = e.getMessage();
+
+            if (message != null && message.contains("username")) {
+                return Result.conflict("This username is already in use.");
+            }
+
+            return Result.conflict("Duplicate data detected.");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Result<UserModel> findByRefreshToken(@NotBlank String refresh) {
+        Optional<UserModel> opt = repository.findByRefreshTokenIgnoreCase(refresh);
+
+        return opt.map(Result::success).orElseGet(() -> Result.notFound("User not found"));
     }
 
 }

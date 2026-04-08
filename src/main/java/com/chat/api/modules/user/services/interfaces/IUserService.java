@@ -7,6 +7,7 @@ import com.chat.api.modules.user.model.UserModel;
 import com.chat.api.utils.annotation.global.emailConstraint.EmailConstraint;
 import com.chat.api.utils.annotation.global.isModelInitialized.IsModelInitialized;
 import com.chat.api.utils.result.Result;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -29,6 +30,11 @@ public interface IUserService {
             UUID userID
     );
     Result<UserModel> setLastLogin(
+            UUID userID,
+            @NotBlank String refreshToken
+    );
+    Result<UserModel> setLastLogin(
             UUID userID
     );
+    Result<UserModel> findByRefreshToken(@NotBlank String refresh);
 }
