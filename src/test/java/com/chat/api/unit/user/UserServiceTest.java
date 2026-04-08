@@ -43,6 +43,7 @@ public class UserServiceTest {
             .password("12345678")
             .roles(Set.of("USER"))
             .bio("AnyBio")
+            .refreshToken("refresh-token")
             .build();
 
     CreateUserDTO dto = new CreateUserDTO(
@@ -420,6 +421,34 @@ public class UserServiceTest {
         InOrder order = inOrder(repository);
         order.verify(repository).findById(userId);
         order.verify(repository).save(user);
+    }
+
+    @Test
+    void shouldReturnUserWhenGetByRefreshToken() {
+        when(repository.findByRefreshTokenIgnoreCase(user.getRefreshToken()))
+                .thenReturn(Optional.of(user));
+
+        Result<UserModel> result = this.service.findByRefreshToken(user.getRefreshToken());
+
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.OK);
+        assertThat(result.isSuccess()).isTrue();
+
+        verify(repository, times(1)).findByRefreshTokenIgnoreCase(anyString());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void shouldReturnNullWhenGetByRefreshToken() {
+        when(repository.findByRefreshTokenIgnoreCase(user.getRefreshToken()))
+                .thenReturn(Optional.empty());
+
+        Result<UserModel> result = this.service.findByRefreshToken(user.getRefreshToken());
+
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(result.isFailure()).isTrue();
+
+        verify(repository, times(1)).findByRefreshTokenIgnoreCase(anyString());
+        verifyNoMoreInteractions(repository);
     }
 
 }
