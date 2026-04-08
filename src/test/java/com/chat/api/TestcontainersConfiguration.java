@@ -9,7 +9,7 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
 	@Bean
 	@ServiceConnection
@@ -20,7 +20,23 @@ class TestcontainersConfiguration {
 	@Bean
 	@ServiceConnection
 	MongoDBContainer mongoDBContainer() {
-		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
+		MongoDBContainer container =
+				new MongoDBContainer(DockerImageName.parse("mongo:6.0"))
+						.withCommand("--replSet rs0");
+
+		container.start();
+
+		try {
+			container.execInContainer(
+					"mongosh",
+					"--eval",
+					"rs.initiate()"
+			);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+		return container;
 	}
 
 	@Bean
