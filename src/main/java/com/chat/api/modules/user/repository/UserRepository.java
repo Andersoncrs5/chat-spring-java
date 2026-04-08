@@ -14,5 +14,5 @@ public interface UserRepository extends MongoRepository<UserModel, UUID>, Custom
     boolean existsByEmailIgnoreCase(@EmailConstraint String email);
     boolean existsByUsernameIgnoreCase(String username);
 
-    Optional<UserModel> findByRefreshToken(@NotBlank String refresh);
+    Optional<UserModel> findByRefreshTokenIgnoreCase(@NotBlank String refresh);
 }
