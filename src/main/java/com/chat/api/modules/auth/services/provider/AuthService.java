@@ -9,11 +9,12 @@ import com.chat.api.utils.res.ResponseToken;
 import com.chat.api.utils.result.Result;
 import com.chat.api.utils.services.interfaces.ITokenService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService implements IAuthService {
@@ -22,7 +23,6 @@ public class AuthService implements IAuthService {
     private final Argon2PasswordEncoder encoder;
     private final AuthModuleGateway gateway;
 
-    @Transactional
     public Result<ResponseToken> login(LoginRequestDTO dto) {
         return gateway.findUserByEmail(dto.email())
                 .map(user -> {
@@ -40,19 +40,19 @@ public class AuthService implements IAuthService {
                         return Result.<ResponseToken>failure("Invalid credentials", HttpStatus.UNAUTHORIZED);
                     }
 
-                    Result<UserModel> result = gateway.setLastLogin(user.getId());
+                    ResponseToken response = tokenService.generateResponseToken(user);
+
+                    Result<UserModel> result = gateway.setLastLogin(user.getId(), response.refreshToken());
 
                     if (result.isFailure()) {
                         return Result.<ResponseToken>failure(result.getErrors(), result.getStatus());
                     }
 
-                    ResponseToken response = tokenService.generateResponseToken(user);
                     return Result.success(response);
                 })
                 .orElseGet(() -> Result.failure("User not found", HttpStatus.NOT_FOUND));
     }
 
-    @Transactional
     public Result<ResponseToken> create(CreateUserDTO dto) {
         Result<UserModel> userResult = this.gateway.createUser(dto);
 
@@ -61,6 +61,26 @@ public class AuthService implements IAuthService {
         }
 
         ResponseToken response = tokenService.generateResponseToken(userResult.getValue());
+        return Result.success(response);
+    }
+
+    public Result<ResponseToken> refreshToken(String refreshToken) {
+        Result<UserModel> userByRefreshToken = this.gateway.findUserByRefreshToken(refreshToken);
+
+        if (userByRefreshToken.isFailure()) {
+            return Result.failure(userByRefreshToken.getErrors(), userByRefreshToken.getStatus());
+        }
+
+        UserModel user = userByRefreshToken.getValue();
+
+        ResponseToken response = tokenService.generateResponseToken(user);
+
+        Result<UserModel> result = gateway.setLastLogin(user.getId(), response.refreshToken());
+
+        if (result.isFailure()) {
+            return Result.failure(result.getErrors(), result.getStatus());
+        }
+
         return Result.success(response);
     }
 
