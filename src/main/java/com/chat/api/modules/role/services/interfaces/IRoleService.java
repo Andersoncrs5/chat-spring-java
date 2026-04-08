@@ -6,4 +6,5 @@ import jakarta.validation.constraints.NotBlank;
 
 public interface IRoleService {
     Result<RoleModel> create(@NotBlank String name);
+    Result<RoleModel> create1(@NotBlank String name);
 }
