@@ -30,13 +30,13 @@ public class MongoConfig {
         return new MongoTransactionManager(dbFactory);
     }
 
-    @Bean
-    public MongoCustomConversions customConversions() {
-        return new MongoCustomConversions(List.of(
-                new OffsetDateTimeReadConverter(),
-                new OffsetDateTimeWriteConverter()
-        ));
-    }
+//    @Bean
+//    public MongoCustomConversions customConversions() {
+//        return new MongoCustomConversions(List.of(
+//                new OffsetDateTimeReadConverter(),
+//                new OffsetDateTimeWriteConverter()
+//        ));
+//    }
 
     @Bean
     public ValidatingMongoEventListener validatingMongoEventListener(
