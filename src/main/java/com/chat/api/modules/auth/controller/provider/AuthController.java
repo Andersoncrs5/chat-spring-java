@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,6 +60,24 @@ public class AuthController implements IAuthControllerDocs {
         return ResponseEntity
                 .status(201)
                 .body(ResponseHttp.success(tokenResult.getValue(), "User created"));
+    }
+
+    @Override
+    public ResponseEntity<?> refreshToken(
+            @PathVariable String refreshToken,
+            HttpServletRequest request
+    ) {
+        Result<ResponseToken> result = this.service.refreshToken(refreshToken);
+
+        if (result.isFailure()) {
+            return ResponseEntity
+                    .status(result.getStatus())
+                    .body(ResponseHttp.error("Error the to log user", result.getErrors()));
+        }
+
+        return ResponseEntity
+                .ok(ResponseHttp.success(result.getValue(), "Tokens created"));
+
     }
 
 }
