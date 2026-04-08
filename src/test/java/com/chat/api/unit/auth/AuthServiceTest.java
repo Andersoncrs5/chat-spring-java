@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 
@@ -44,6 +43,7 @@ public class AuthServiceTest {
             .roles(Set.of("USER"))
             .bio("AnyBio")
             .roles(Set.of("USER"))
+            .refreshToken("refresh-token")
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .build();
@@ -63,11 +63,6 @@ public class AuthServiceTest {
             Instant.now()
     );
 
-    LoginRequestDTO dto = new LoginRequestDTO(
-            user.getEmail(),
-            user.getPassword()
-    );
-
     ResponseToken expectedToken = new ResponseToken(
             "access-token",
             "refresh-token",
@@ -75,6 +70,11 @@ public class AuthServiceTest {
             Instant.now(),
             Instant.now(),
             userDTO
+    );
+
+    LoginRequestDTO dto = new LoginRequestDTO(
+            user.getEmail(),
+            user.getPassword()
     );
 
     CreateUserDTO createUserDTO = new CreateUserDTO(
@@ -91,28 +91,24 @@ public class AuthServiceTest {
     void shouldMakeLoginUserSuccessfully() {
         when(gateway.findUserByEmail(dto.email())).thenReturn(Result.success(user));
         when(encoder.matches(dto.password(), user.getPassword())).thenReturn(true);
-
-        when(gateway.setLastLogin(user.getId())).thenReturn(Result.success(user));
-
         when(tokenService.generateResponseToken(user)).thenReturn(expectedToken);
+        when(gateway.setLastLogin(user.getId(), expectedToken.refreshToken())).thenReturn(Result.success(user));
 
         Result<ResponseToken> result = service.login(dto);
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getValue().token()).isEqualTo(expectedToken.token());
 
-        verify(gateway, times(1)).findUserByEmail(anyString());
-        verify(gateway, times(1)).setLastLogin(user.getId());
+        verify(gateway, times(1)).findUserByEmail(dto.email());
         verify(tokenService, times(1)).generateResponseToken(user);
-        verify(gateway, never()).blockUser(any());
-
-        verifyNoMoreInteractions(gateway, tokenService, gateway);
+        verify(gateway, times(1)).setLastLogin(user.getId(), expectedToken.refreshToken());
 
         InOrder order = inOrder(gateway, encoder, tokenService);
-        order.verify(gateway).findUserByEmail(anyString());
-        order.verify(encoder).matches(anyString(), anyString());
-        order.verify(gateway).setLastLogin(user.getId());
+
+        order.verify(gateway).findUserByEmail(dto.email());
+        order.verify(encoder).matches(dto.password(), user.getPassword());
         order.verify(tokenService).generateResponseToken(user);
+        order.verify(gateway).setLastLogin(user.getId(), expectedToken.refreshToken());
     }
 
     @Test
@@ -125,10 +121,10 @@ public class AuthServiceTest {
         assertThat(login.getValue()).isNull();
         assertThat(login.getStatusCode()).isEqualTo(404);
 
-        verify(gateway, times(1)).findUserByEmail(anyString());
-        verify(gateway, never()).setLastLogin(user.getId());
-        verify(tokenService, never()).generateResponseToken(user);
+        verify(gateway, times(1)).findUserByEmail(dto.email());
+        verify(gateway, never()).setLastLogin(user.getId(), expectedToken.refreshToken());
         verify(gateway, never()).blockUser(any());
+        verify(tokenService, never()).generateResponseToken(user);
 
         verifyNoMoreInteractions(gateway, tokenService, gateway);
     }
@@ -136,7 +132,7 @@ public class AuthServiceTest {
     @Test
     void shouldFailTheMakeLoginBecausePasswordWrong() {
         when(gateway.findUserByEmail(dto.email())).thenReturn(Result.success(user));
-        when(encoder.matches(anyString(), anyString())).thenReturn(false);
+        when(encoder.matches(dto.password(), user.getPassword())).thenReturn(false);
         when(gateway.blockUser(any(UUID.class))).thenReturn(Result.success(user));
 
         Result<ResponseToken> login = this.service.login(dto);
@@ -146,11 +142,11 @@ public class AuthServiceTest {
         assertThat(login.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(login.getErrors().getFirst()).isEqualTo("Invalid credentials");
 
-        verify(gateway, times(1)).findUserByEmail(anyString());
+        verify(gateway, times(1)).findUserByEmail(dto.email());
         verify(encoder, times(1)).matches(dto.password(), user.getPassword());
-        verify(gateway, times(1)).blockUser(any());
-        verify(gateway, never()).setLastLogin(user.getId());
+        verify(gateway, times(1)).blockUser(user.getId());
         verify(tokenService, never()).generateResponseToken(user);
+        verify(gateway, never()).setLastLogin(user.getId(), expectedToken.refreshToken());
 
         verifyNoMoreInteractions(gateway, tokenService, gateway);
     }
@@ -186,5 +182,80 @@ public class AuthServiceTest {
         verifyNoMoreInteractions(gateway);
         verifyNoInteractions(tokenService, encoder);
     }
+
+    @Test
+    void shouldMakeRefreshTokens() {
+        when(gateway.findUserByRefreshToken(user.getRefreshToken()))
+                .thenReturn(Result.success(user));
+        when(tokenService.generateResponseToken(user))
+                .thenReturn(expectedToken);
+        when(gateway.setLastLogin(user.getId(), expectedToken.refreshToken()))
+                .thenReturn(Result.success(user));
+
+        Result<ResponseToken> tokenResult = this.service.refreshToken(user.getRefreshToken());
+
+        assertThat(tokenResult.isSuccess()).isTrue();
+        assertThat(tokenResult.getValue().token()).isEqualTo(expectedToken.token());
+        assertThat(tokenResult.getValue().refreshToken()).isEqualTo(expectedToken.refreshToken());
+
+        verify(gateway, times(1)).findUserByRefreshToken(user.getRefreshToken());
+        verify(tokenService, times(1)).generateResponseToken(user);
+        verify(gateway, times(1)).setLastLogin(user.getId(), expectedToken.refreshToken());
+
+        verifyNoMoreInteractions(gateway, tokenService);
+
+        InOrder order = inOrder(gateway, tokenService);
+
+        order.verify(gateway).findUserByRefreshToken(user.getRefreshToken());
+        order.verify(tokenService).generateResponseToken(user);
+        order.verify(gateway).setLastLogin(user.getId(), expectedToken.refreshToken());
+    }
+
+    @Test
+    void shouldFailBecauseUserNotFoundTheFindByRefreshTokenInMethodRefreshToken() {
+        when(gateway.findUserByRefreshToken(user.getRefreshToken()))
+                .thenReturn(Result.notFound("User not found"));
+
+        Result<ResponseToken> result = this.service.refreshToken(user.getRefreshToken());
+
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getErrors().getFirst()).isEqualTo("User not found");
+        assertThat(result.getValue()).isNull();
+
+        verify(gateway, atMostOnce()).findUserByRefreshToken(user.getRefreshToken());
+        verify(tokenService, never()).generateResponseToken(user);
+        verify(gateway, never()).setLastLogin(user.getId(), expectedToken.refreshToken());
+
+        verifyNoMoreInteractions(gateway, tokenService);
+    }
+
+    @Test
+    void shouldFailTheMakeRefreshTokensBecauseSetLastLoginFail() {
+        when(gateway.findUserByRefreshToken(user.getRefreshToken()))
+                .thenReturn(Result.success(user));
+        when(tokenService.generateResponseToken(user))
+                .thenReturn(expectedToken);
+        when(gateway.setLastLogin(user.getId(), expectedToken.refreshToken()))
+                .thenReturn(Result.notFound("User not found"));
+
+        Result<ResponseToken> tokenResult = this.service.refreshToken(user.getRefreshToken());
+
+        assertThat(tokenResult.isFailure()).isTrue();
+        assertThat(tokenResult.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(tokenResult.getValue()).isNull();
+
+        verify(gateway, atMostOnce()).findUserByRefreshToken(user.getRefreshToken());
+        verify(tokenService, atMostOnce()).generateResponseToken(user);
+        verify(gateway, atMostOnce()).setLastLogin(user.getId(), expectedToken.refreshToken());
+
+        verifyNoMoreInteractions(gateway, tokenService);
+
+        InOrder order = inOrder(gateway, tokenService);
+
+        order.verify(gateway).findUserByRefreshToken(user.getRefreshToken());
+        order.verify(tokenService).generateResponseToken(user);
+        order.verify(gateway).setLastLogin(user.getId(), expectedToken.refreshToken());
+    }
+
 
 }
