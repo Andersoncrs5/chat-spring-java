@@ -50,6 +50,15 @@ spring:
   application:
     name: api
 
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.mongodb.driver.protocol.command: DEBUG
+    com.chat.api: DEBUG
+    org.springframework.web: DEBUG
+
 server:
   port: 6454
 
