@@ -1,4 +1,8 @@
 spring:
+  data:
+    mongodb:
+      additional-parameters: retryWrites=false
+
   argon:
     saltLength: 16
     hashLength: 32
