@@ -32,6 +32,10 @@ public class Result<T> {
         return new Result<>(value, true, null, HttpStatus.CREATED);
     }
 
+    public static <T> Result<T> badRequest(String ...error) {
+        return new Result<>(null, false, List.of(error), HttpStatus.BAD_REQUEST);
+    }
+
     public static <T> Result<T> failure(String error, HttpStatus status) {
         return new Result<>(null, false, List.of(error), status);
     }
