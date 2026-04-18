@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({com.chat.api.TestcontainersConfiguration.class, NoTransactionConfig.class})
+@Import({com.chat.api.TestcontainersConfiguration.class})
 public class AuthControllerTest {
 
     private final String URL = "/v1/auth/";
