@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface IUserService {
+    Result<Boolean> existsById(UUID id);
     Result<UserModel> create(CreateUserDTO dto);
     void delete(@IsModelInitialized UserModel user);
     Result<UserModel> findById(UUID id);

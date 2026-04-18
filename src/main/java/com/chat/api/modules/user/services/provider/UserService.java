@@ -35,6 +35,10 @@ public class UserService implements IUserService {
     private final Argon2PasswordEncoder encoder;
     private final UserModuleGateway gateway;
 
+    public Result<Boolean> existsById(UUID id) {
+        return Result.success(repository.existsById(id));
+    }
+
     @Override
     public Result<UserModel> create(CreateUserDTO dto) {
         UserModel model = this.mapper.toModel(dto);
