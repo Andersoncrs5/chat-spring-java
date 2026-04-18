@@ -1,6 +1,8 @@
 package com.chat.api;
 
 import com.chat.api.helps.classes.UserResponse;
+import com.chat.api.modules.contacts.dto.ContactDTO;
+import com.chat.api.modules.contacts.dto.CreateContactDTO;
 import com.chat.api.modules.user.dto.CreateUserDTO;
 import com.chat.api.utils.res.ResponseHttp;
 import com.chat.api.utils.res.ResponseToken;
@@ -25,6 +27,48 @@ public class HelperTest {
 
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
+
+    public ContactDTO createContact(
+            UserResponse user,
+            UserResponse contact
+    ) {
+        var traceId = UUID.randomUUID().toString();
+        final String URL = "/v1/contact";
+
+        try {
+
+            CreateContactDTO dto = new CreateContactDTO(
+                    "pochita",
+                    contact.tokens().user().id()
+            );
+
+            MvcResult result = this.mockMvc.perform(post(URL)
+                    .content(objectMapper.writeValueAsString(dto))
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer " + user.tokens().token())
+                    .header("X-Idempotency-Key", traceId)
+            ).andExpect(status().isCreated()).andReturn();
+
+            String registerJson = result.getResponse().getContentAsString();
+            TypeReference<ResponseHttp<ContactDTO>> typeRef =
+                    new TypeReference<>() {};
+
+            ResponseHttp<ContactDTO> response =
+                    objectMapper.readValue(registerJson, typeRef);
+
+            assertThat(response.status()).isEqualTo(true);
+            assertThat(response.traceId()).isNotBlank().isEqualTo(traceId);
+            assertThat(response.message()).isNotBlank();
+            assertThat(response.data()).isNotNull();
+
+            assertThat(response.data().id()).isNotNull();
+            assertThat(response.data().contactId()).isEqualTo(contact.tokens().user().id());
+
+            return response.data();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public UserResponse createUser() {
         String key = UUID.randomUUID().toString();
